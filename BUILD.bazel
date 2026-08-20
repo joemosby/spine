@@ -1,4 +1,4 @@
-# Docs package graph. Product C++ is not here; public placeholder is //runtime.
+# Docs package graph. Public C++ surface is //runtime.
 filegroup(
     name = "docs",
     srcs = [

@@ -1,11 +1,25 @@
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 
 package(default_visibility = ["//visibility:private"])
 
-# Public consumer surface. Placeholder only; Runtime owns product C++.
+# Public consumer surface: mailbox + loop + observation.
 # Isolation is not a dep. Harness is not a dep. Labels stay package-relative.
+# Not a scheduler. Not a cgroup call. Not a measured deadline.
 cc_library(
     name = "runtime",
+    srcs = ["runtime.cc"],
     hdrs = ["runtime.h"],
+    copts = [
+        "-fno-exceptions",
+        "-fno-rtti",
+    ],
     visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "runtime_test",
+    size = "small",
+    srcs = ["runtime_test.cc"],
+    deps = [":runtime"],
 )
