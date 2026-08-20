@@ -44,6 +44,9 @@ Guard: isolation, timing, alloc. Architect looks only if a PR changes a stamp.
   the BE map. Stock 95% `sched_rt_runtime_us`. Do not set it. No `-1`.
   IRQ-on-RT-CPU leak stays in the open. Long form:
   `docs/linux-isolation-knobs.md`.
+- **Observation:** event types timing, overrun, stale, mode, kill. They ride the
+  existing RT-owned observability record. No second channel. Not a telemetry
+  stack. (Architect)
 
 ## Runtime contract (cut 2)
 
@@ -62,6 +65,7 @@ Long form: `docs/inter-domain-contract.md`.
 - No unbounded loop on the job path.
 - Init-hold command set at init. Restart does not clear RT state.
 - Observability is a fixed RT-owned record, readable if BE is dead, not via BE.
+- Observation events: timing, overrun, stale, mode, kill. Same record. No second channel.
 
 ## Consumer module (Bzlmod)
 
