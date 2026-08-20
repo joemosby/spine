@@ -35,6 +35,10 @@ Guard: isolation, timing, alloc. Architect looks only if a PR changes a stamp.
   measurement and Architect stamp.
 - **Bazel:** not fully hermetic. Fetched LLVM + host sysroot. Do not write
   hermetic. (Ship / Architect)
+- **Bzlmod consumer:** portable as a third-party Bzlmod module. Name `spine`.
+  Public `@spine//runtime`. Consumer brings the toolchain. Isolation, when
+  present, is Linux-only and not a runtime dep. Harness is not a public dep.
+  No WORKSPACE. (Architect)
 - **Cgroup knobs / IRQ leak / 95% FIFO cap:** Isolate owns these. Shared map
   is staging only (payload + commit). Age/seq/valid are RT-private, not in
   the BE map. Stock 95% `sched_rt_runtime_us`. Do not set it. No `-1`.
@@ -58,3 +62,28 @@ Long form: `docs/inter-domain-contract.md`.
 - No unbounded loop on the job path.
 - Init-hold command set at init. Restart does not clear RT state.
 - Observability is a fixed RT-owned record, readable if BE is dead, not via BE.
+
+## Consumer module (Bzlmod)
+
+Architect stamped: portable as a third-party Bzlmod module. Requirements,
+not suggestions.
+
+- Module name is `spine`. A consumer does `bazel_dep(name = "spine")` and
+  depends on the public `cc_library` at `@spine//runtime`. No WORKSPACE
+  consumers.
+- Public surface is small and stable: `@spine//runtime` only. That target is
+  a placeholder until Runtime owns the C++. It is not a loop and not a
+  cgroup call.
+- Isolation, when a package exists, is Linux-only
+  (`target_compatible_with`). It is not required to use the mailbox/loop
+  and must not be a required dep of `@spine//runtime`. Do not claim
+  isolation.
+- Harness is not a public dep.
+- Do not force this workspace's fetched LLVM or host sysroot on the
+  consumer. They bring the toolchain. This repo's own builds still use
+  the fetched LLVM and must not silently use host gcc/clang. That is a
+  root-module `dev_dependency`, not a consumer requirement.
+- No repo-root scripts or absolute paths in the library graph. Labels stay
+  package-relative.
+- This workspace is still not fully hermetic. Do not write "hermetic" as a
+  claim.
