@@ -51,6 +51,13 @@ Guard: isolation, timing, alloc. Architect looks only if a PR changes a stamp.
   (control `be-idle`); named injections `inj-be-kill`, `inj-be-overrun`,
   `inj-stale-mailbox`; no numbers; long form `docs/phase0-proof-spec.md`;
   Harness is not a public dep.
+- **Layer, not runtime:** Spine is a layer on existing Linux isolation, not
+  a runtime and not an OS. Halos / QNX HV / RHIVOS already sell that; we
+  do not grow one. Do not copy LITHE: no isolcpus, no PREEMPT_RT theater,
+  no copied numbers, no hot-swap. C++ core stays mailbox + loop +
+  observation record, not a scheduler. Isolation stays stock cgroup v2 +
+  disjoint cpuset. Not a hypervisor. Phase 0 is the layer + one measured
+  run. Harness is the measured run, not a runtime. (Architect)
 
 ## Runtime contract (cut 2)
 
@@ -96,9 +103,32 @@ not suggestions.
 - This workspace is still not fully hermetic. Do not write "hermetic" as a
   claim.
 
+## Layer, not runtime
+
+Architect stamped. Requirements, not suggestions.
+
+- Spine is a layer on existing Linux isolation, not a runtime and not an
+  OS. Halos / QNX HV / RHIVOS already sell that; we do not grow one.
+- Phase 0 is the layer + one measured run: period-met under `be-saturate`,
+  then `inj-be-kill`, `inj-be-overrun`, `inj-stale-mailbox`. Any sentence
+  that a deadline was met needs a measurement and Architect stamp. Do not
+  invent numbers.
+- Do not copy LITHE: no isolcpus, no PREEMPT_RT theater, no copied
+  numbers, no hot-swap.
+- C++ core stays mailbox + loop + observation record. Not a scheduler.
+- Isolation stays stock cgroup v2 + disjoint cpuset. Long form:
+  `docs/linux-isolation-knobs.md`. Not a hypervisor. Do not claim
+  isolation.
+- Harness is the measured run, not a runtime. Long form:
+  `docs/phase0-proof-spec.md`. Spec only. Not measured.
+- Public surface stays `@spine//runtime` only. This workspace is still
+  not fully hermetic. Do not write "hermetic" as a claim. Do not claim
+  isolation, deadlines, or certification.
+
 ## Harness
 
 Long form: `docs/phase0-proof-spec.md`. Spec only. Not measured.
+The measured run, not a runtime.
 
 - Clock: `CLOCK_MONOTONIC_RAW`. Named load: `be-saturate`. Control: `be-idle`.
 - Named injections: `inj-be-kill`, `inj-be-overrun`, `inj-stale-mailbox`.
