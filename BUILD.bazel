@@ -7,6 +7,7 @@ filegroup(
         "docs/inter-domain-contract.md",
         "docs/phase0-proof-spec.md",
         "docs/phase0-proof-run.md",
+        "docs/contract-failures.md",
     ],
     visibility = ["//visibility:public"],
 )
