@@ -44,6 +44,9 @@ Guard: isolation, timing, alloc. Architect looks only if a PR changes a stamp.
   the BE map. Stock 95% `sched_rt_runtime_us`. Do not set it. No `-1`.
   IRQ-on-RT-CPU leak stays in the open. Long form:
   `docs/linux-isolation-knobs.md`.
+- **Proof spec:** clock `CLOCK_MONOTONIC_RAW`; named load `be-saturate`
+  (control `be-idle`); no numbers; long form `docs/phase0-proof-spec.md`;
+  Harness is not a public dep.
 
 ## Runtime contract (cut 2)
 
@@ -87,3 +90,11 @@ not suggestions.
   package-relative.
 - This workspace is still not fully hermetic. Do not write "hermetic" as a
   claim.
+
+## Harness
+
+Long form: `docs/phase0-proof-spec.md`. Spec only. Not measured.
+
+- Clock: `CLOCK_MONOTONIC_RAW`. Named load: `be-saturate`. Control: `be-idle`.
+- Measurement uses the existing RT observability record only. No second channel.
+- Harness is not a public dep.
