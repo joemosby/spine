@@ -1,7 +1,7 @@
 # Phase 0 inter-domain contract
 
 Status: cut 2. Architect stamped: separate address spaces; seq/age/valid RT-only;
-job path wait-free vs BE. Not measured.
+job path wait-free vs BE; observation events: timing, overrun, stale, mode, kill (existing record, no second channel). Not measured.
 This document states rules, not measurements.
 No deadline value, WCET, miss rate, or isolation guarantee is claimed here.
 Those require a Harness measurement and Architect's stamp.
@@ -187,6 +187,32 @@ Fields at least:
 - hold vs consume
 - mode: `normal` | `be-stale` | `be-dead` | `rt-overrun`
 
+## Observation events
+
+Phase 0 observation is the existing RT-owned record. It is not a second mailbox,
+not a BE map, and not a telemetry stack.
+
+Every period, RT writes these event types into that record. No extra channel.
+
+- **timing** — period start and job duration. Clock is the one named by Harness
+  (`CLOCK_MONOTONIC_RAW` in the proof spec). This document does not claim a
+  deadline was met. **Unstamped / unmeasured.**
+- **overrun** — RT overrun flag (job still running at next period start) and BE
+  overrun count (no accepted publish this period). Both stay visible. BE overrun
+  is not an RT deadline miss.
+- **stale** — mailbox valid and age > `N`, or never valid. RT holds. Silence is
+  stale, not kill.
+- **mode** — one enum: `normal` | `be-stale` | `be-dead` | `rt-overrun`.
+  Precedence: `rt-overrun` > `be-dead` > `be-stale` > `normal`. Flags still show
+  the other fault.
+- **kill** — isolation-fault word is set (BE killed or isolation fault). Mode
+  `be-dead`, hold. Isolate/supervisor is the only writer/clearer. Restart does
+  not clear it.
+
+Harness reads the same record (read-only, not via BE), including after kill.
+SIL injection cases (BE kill, overrun, stale mailbox) must show on these events.
+No numbers in this document.
+
 ## Out of scope
 
 Not a middleware (no DDS, ROS, agent framework). Not a schedulability proof.
@@ -203,3 +229,4 @@ Not an isolation implementation. Not a deadline claim. Not C++.
    set by Isolate/supervisor. Silence is stale, not dead.
 5. Init-hold command is set at init. Restart does not clear RT state.
 6. `T` and `N` are init config, not claims. No numbers in this document.
+7. Observation events timing, overrun, stale, mode, kill ride the existing RT-owned record. No second channel.
