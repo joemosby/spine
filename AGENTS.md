@@ -35,8 +35,11 @@ Guard: isolation, timing, alloc. Architect looks only if a PR changes a stamp.
   measurement and Architect stamp.
 - **Bazel:** not fully hermetic. Fetched LLVM + host sysroot. Do not write
   hermetic. (Ship / Architect)
-- **Cgroup knobs / IRQ leak / 95% FIFO cap:** Isolate owns these. Do not invent
-  them here. Long form: `docs/linux-isolation-knobs.md` when stamped.
+- **Cgroup knobs / IRQ leak / 95% FIFO cap:** Isolate owns these. Shared map
+  is staging only (payload + commit). Age/seq/valid are RT-private, not in
+  the BE map. Stock 95% `sched_rt_runtime_us`. Do not set it. No `-1`.
+  IRQ-on-RT-CPU leak stays in the open. Long form:
+  `docs/linux-isolation-knobs.md`.
 
 ## Runtime contract (cut 2)
 
