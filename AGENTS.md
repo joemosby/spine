@@ -45,7 +45,8 @@ Guard: isolation, timing, alloc. Architect looks only if a PR changes a stamp.
   IRQ-on-RT-CPU leak stays in the open. Long form:
   `docs/linux-isolation-knobs.md`.
 - **Proof spec:** clock `CLOCK_MONOTONIC_RAW`; named load `be-saturate`
-  (control `be-idle`); no numbers; long form `docs/phase0-proof-spec.md`;
+  (control `be-idle`); named injections `inj-be-kill`, `inj-be-overrun`,
+  `inj-stale-mailbox`; no numbers; long form `docs/phase0-proof-spec.md`;
   Harness is not a public dep.
 
 ## Runtime contract (cut 2)
@@ -96,5 +97,6 @@ not suggestions.
 Long form: `docs/phase0-proof-spec.md`. Spec only. Not measured.
 
 - Clock: `CLOCK_MONOTONIC_RAW`. Named load: `be-saturate`. Control: `be-idle`.
+- Named injections: `inj-be-kill`, `inj-be-overrun`, `inj-stale-mailbox`.
 - Measurement uses the existing RT observability record only. No second channel.
 - Harness is not a public dep.
