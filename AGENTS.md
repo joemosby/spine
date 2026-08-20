@@ -59,7 +59,7 @@ Guard: isolation, timing, alloc. Architect looks only if a PR changes a stamp.
   disjoint cpuset. Not a hypervisor. Phase 0 is the layer + one measured
   run. Harness is the measured run, not a runtime. (Architect)
 - **Contract failures:** torn publish, stale, isolation-fault, hold. Long form:
-  `docs/contract-failures.md`. Draft. Not a deadline stamp. (Architect)
+  `docs/contract-failures.md`. Not a deadline stamp. (Architect)
 
 ## Runtime contract (cut 2)
 
