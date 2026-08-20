@@ -52,6 +52,7 @@ void publish(StagingSlot* staging, Command cmd) {
   if (staging == nullptr) {
     return;
   }
+  staging->commit.fetch_add(1u, std::memory_order_acq_rel);
   staging->payload = cmd;
   staging->commit.fetch_add(1u, std::memory_order_release);
 }
@@ -92,31 +93,36 @@ void Runtime::step(Command* actuator_out) {
   const std::uint64_t period_start_ns = monotonic_raw_ns();
 
   const std::uint32_t c1 = staging_->commit.load(std::memory_order_acquire);
-  bool have_candidate = false;
+  bool have_snapshot = false;
   Command candidate{0};
-  if (c1 != last_seen_commit_) {
+  std::uint32_t c2 = 0;
+  const bool c1_odd = (c1 & 1u) != 0u;
+  if (c1 != 0u && c1 != last_seen_commit_ && !c1_odd) {
     candidate = staging_->payload;
-    const std::uint32_t c2 = staging_->commit.load(std::memory_order_acquire);
-    if (c1 == c2) {
-      have_candidate = true;
-      const std::uint32_t unseen = c1 - last_seen_commit_;
-      last_seen_commit_ = c1;
-      if (unseen > 1u) {
-        drop_count_ += unseen - 1u;
-      }
+    c2 = staging_->commit.load(std::memory_order_acquire);
+    const bool c2_odd = (c2 & 1u) != 0u;
+    if (c1 == c2 && !c2_odd) {
+      have_snapshot = true;
     }
   }
 
   const bool isolation_fault = isolation_fault_->load(std::memory_order_acquire) != 0;
 
   bool accepted = false;
-  if (have_candidate && !isolation_fault) {
-    accepted = true;
-    sequence_ += 1u;
-    age_ = 0;
-    valid_ = true;
-    committed_ = candidate;
-    last_command_ = candidate;
+  if (have_snapshot) {
+    const std::uint32_t completed = (c2 - last_seen_commit_) / 2u;
+    if (completed > 1u) {
+      drop_count_ += completed - 1u;
+    }
+    last_seen_commit_ = c2;
+    if (!isolation_fault) {
+      accepted = true;
+      sequence_ += 1u;
+      age_ = 0;
+      valid_ = true;
+      committed_ = candidate;
+      last_command_ = candidate;
+    }
   }
 
   if (!accepted) {
@@ -124,8 +130,14 @@ void Runtime::step(Command* actuator_out) {
     be_overrun_count_ += 1u;
   }
 
+  const std::uint64_t job_end_ns = monotonic_raw_ns();
+  const std::uint64_t job_duration_ns = job_end_ns - period_start_ns;
+  const bool rt_overrun = job_duration_ns >= cfg_.period_ns;
+
   bool held = true;
-  if (isolation_fault) {
+  if (rt_overrun) {
+    held = true;
+  } else if (isolation_fault) {
     held = true;
   } else if (accepted) {
     held = false;
@@ -135,10 +147,6 @@ void Runtime::step(Command* actuator_out) {
   } else {
     held = true;
   }
-
-  const std::uint64_t job_end_ns = monotonic_raw_ns();
-  const std::uint64_t job_duration_ns = job_end_ns - period_start_ns;
-  const bool rt_overrun = job_duration_ns >= cfg_.period_ns;
 
   if (!rt_overrun && actuator_out != nullptr) {
     *actuator_out = last_command_;

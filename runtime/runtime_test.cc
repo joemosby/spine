@@ -99,6 +99,34 @@ void test_torn_and_incomplete_rejected() {
   CHECK(f.observation.mailbox_valid);
 }
 
+void test_mid_publish_last_wins_is_no_new_message() {
+  Fixture f;
+  CHECK(f.init());
+  spine::publish(&f.staging, spine::Command{kCmdA});
+  spine::Command out{0};
+  f.rt.step(&out);
+  CHECK(out.value == kCmdA);
+  CHECK(f.observation.mailbox_sequence == 1u);
+  CHECK((f.staging.commit.load(std::memory_order_relaxed) & 1u) == 0u);
+
+  // Second publish in progress: odd commit, payload overwritten, even bump not yet.
+  f.staging.commit.fetch_add(1u, std::memory_order_acq_rel);
+  f.staging.payload = spine::Command{kCmdB};
+  CHECK((f.staging.commit.load(std::memory_order_relaxed) & 1u) != 0u);
+  f.rt.step(&out);
+  CHECK(f.rt.last_command().value == kCmdA);
+  CHECK(f.observation.mailbox_sequence == 1u);
+  CHECK(out.value != kCmdB);
+
+  f.staging.commit.fetch_add(1u, std::memory_order_release);
+  CHECK((f.staging.commit.load(std::memory_order_relaxed) & 1u) == 0u);
+  f.rt.step(&out);
+  CHECK(out.value == kCmdB);
+  CHECK(f.rt.last_command().value == kCmdB);
+  CHECK(f.observation.mailbox_sequence == 2u);
+  CHECK(!f.observation.held);
+}
+
 void test_stale_hold() {
   Fixture f;
   CHECK(f.init());
@@ -169,6 +197,20 @@ void test_isolation_fault_be_dead_hold() {
   CHECK(f.observation.held);
   CHECK(f.isolation_fault.load(std::memory_order_relaxed) == 1u);
   CHECK(f.rt.last_command().value == kCmdA);
+
+  // Completed generation was seen: last_seen advanced, payload not accepted.
+  // Supervisor clear does not replay B.
+  f.isolation_fault.store(0u, std::memory_order_release);
+  f.rt.step(&out);
+  CHECK(f.rt.last_command().value == kCmdA);
+  CHECK(f.observation.mailbox_sequence == 1u);
+  CHECK(!f.observation.isolation_fault);
+
+  spine::publish(&f.staging, spine::Command{kCmdC});
+  f.rt.step(&out);
+  CHECK(out.value == kCmdC);
+  CHECK(f.rt.last_command().value == kCmdC);
+  CHECK(f.observation.mailbox_sequence == 2u);
 }
 
 void test_drop_last_wins() {
@@ -237,26 +279,30 @@ void test_no_second_be_buffer() {
   CHECK(f.observation.mailbox_sequence == 1u);
   CHECK(f.observation.mailbox_valid);
 
-  // seq/age/valid are not in the BE slot.
-  CHECK(f.staging.commit.load(std::memory_order_relaxed) == 1u);
+  // seq/age/valid are not in the BE slot. One complete publish is even.
+  CHECK(f.staging.commit.load(std::memory_order_relaxed) == 2u);
 }
 
-void test_rt_overrun_skips_actuator() {
+void test_rt_overrun_sets_held_and_skips_actuator() {
   Fixture f;
-  f.cfg.period_ns = 1;  // test fixture only; any measurable step duration trips it
+  f.cfg.period_ns = 1;  // test fixture only, not a measured deadline
   CHECK(f.init());
   spine::publish(&f.staging, spine::Command{kCmdA});
-  spine::Command out{0xdeadu};
-  f.rt.step(&out);
-  if (f.observation.rt_overrun) {
-    CHECK(out.value == 0xdeadu);
-    CHECK(f.observation.mode == spine::Mode::kRtOverrun);
-    CHECK(f.rt.last_command().value == kCmdA);
-    CHECK(f.observation.mailbox_valid);
-  } else {
-    // Clock resolution can make a one-instruction job read as 0 ns.
-    CHECK(out.value == kCmdA);
+
+  bool saw_overrun = false;
+  for (int i = 0; i < 100000; ++i) {
+    spine::Command out{0xdeadu};
+    f.rt.step(&out);
+    if (f.observation.rt_overrun) {
+      CHECK(out.value == 0xdeadu);
+      CHECK(f.observation.held);
+      CHECK(f.observation.mode == spine::Mode::kRtOverrun);
+      CHECK(f.observation.mailbox_valid);
+      saw_overrun = true;
+      break;
+    }
   }
+  CHECK(saw_overrun);
 }
 
 }  // namespace
@@ -265,12 +311,13 @@ int main() {
   test_init_rejects_bad_config();
   test_publish_consume_wait_free();
   test_torn_and_incomplete_rejected();
+  test_mid_publish_last_wins_is_no_new_message();
   test_stale_hold();
   test_isolation_fault_be_dead_hold();
   test_drop_last_wins();
   test_observation_fields_filled();
   test_no_second_be_buffer();
-  test_rt_overrun_skips_actuator();
+  test_rt_overrun_sets_held_and_skips_actuator();
 
   if (g_failed != 0) {
     std::fprintf(stderr, "%d check(s) failed\n", g_failed);

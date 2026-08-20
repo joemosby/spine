@@ -23,7 +23,7 @@ struct Command {
 // BE-writable staging only. Age/seq/valid MUST NOT live here.
 struct StagingSlot {
   Command payload;
-  std::atomic<std::uint32_t> commit;  // 0 at init; BE stores payload, then release-stores commit+1
+  std::atomic<std::uint32_t> commit;  // 0 at init; even = complete, odd = in progress
 };
 
 struct Observation {
@@ -84,7 +84,7 @@ class Runtime {
   Command last_command_{};
 };
 
-// BE publish: write payload then release-store commit. Wait-free. No lock.
+// BE publish: seqlock commit. Odd while writing payload, even when complete. Wait-free. No lock.
 // If a prior unconsumed candidate is overwritten, the next step() increments drop_count (last-wins).
 void publish(StagingSlot* staging, Command cmd);
 
