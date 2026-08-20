@@ -5,10 +5,11 @@ This document lists Linux knobs Isolate will use in Phase 0. It does not
 claim isolation, bounded latency, or a deadline. Those require a Harness
 measurement and Architect's stamp.
 
-This is Isolate's list against the inter-domain contract (Runtime, PR #1).
+This is Isolate's list against the inter-domain contract on main (cut 2).
 It is not that contract. Two domains only. One RT-owned mailbox is the only
 cross-domain data path. These knobs are designed against that mailbox, not
-a second channel.
+a second channel. Isolation knobs are Linux-only and not required to use
+the mailbox/loop.
 
 ## What Phase 0 uses
 
@@ -35,7 +36,7 @@ not an isolation claim.
 
 `memory.max` is pressure isolation, not MMU isolation. A BE that hits the
 cap is starved or killed. That does not keep BE from writing RT-owned bytes.
-Process address spaces do that, except for the one mailbox mapping.
+Process address spaces do that, except for the one staging mapping.
 
 ## Sched
 
@@ -47,23 +48,33 @@ BE is `SCHED_OTHER`.
 Do not use `SCHED_DEADLINE` in Phase 0. It invites deadline claims.
 
 Stock host knob that affects timing: `/proc/sys/kernel/sched_rt_runtime_us`
-(and `sched_rt_period_us`). Default throttles FIFO to 95% of each second.
-Phase 0 either leaves the default and does not pretend RT owns 100% of its
-CPU, or sets the knob in the open. Do not ignore it.
+(and `sched_rt_period_us`). Stock default throttles FIFO to 95% of each
+second. Phase 0 leaves that cap. Do not set `sched_rt_runtime_us`. Do not
+set `-1`. Do not disable the throttle. We do not pretend RT owns 100% of
+its CPU.
 
 ## Spatial on stock
 
 Two processes. Separate address spaces.
 
-The only shared mapping is the mailbox: memfd or POSIX shm, created and
-owned by RT, mapped into both. Age, sequence, and valid live in that
-mailbox. BE publishes a complete message or nothing. No pointers. No
+The only shared mapping is the staging slot: memfd or POSIX shm, created
+and owned by RT, mapped into both. The BE-mapped region is staging only:
+payload + commit word. Sequence, age, and valid live in RT-private memory
+(committed RT-only storage). They are not in the BE map.
+
+BE must not map age, sequence, or valid. Payload + commit only, or those
+fields live on RT-only pages. A wild BE write cannot reset freshness.
+
+This is not a second channel. Age, sequence, and valid are not published
+over a pipe or socket. RT copies and validates from the staging slot into
+RT-only storage, same as the cut-2 contract on main. BE publishes a
+complete candidate (payload then commit) or nothing. No pointers. No
 shared heap.
 
 No pipe. No socket. No watchdog. No second IPC channel.
 
 `cgroup.kill` on `spine/be` must leave RT private mappings and the last
-complete mailbox intact. RT continues. BE death is not an RT miss.
+complete committed message intact. RT continues. BE death is not an RT miss.
 
 ## Stock kernel: what we can and cannot demonstrate
 
@@ -71,8 +82,8 @@ A stock kernel can demonstrate:
 
 - BE cannot schedule on the RT CPU
 - BE memory cap and pid cap
-- process isolation except the one mailbox mapping
-- killing BE leaves RT and the last complete mailbox message
+- process isolation except the one staging mapping
+- killing BE leaves RT and the last complete committed message
 
 A stock kernel cannot demonstrate:
 
@@ -104,6 +115,6 @@ Architect stamps. This document does not.
 1. cgroup v2 only. Leaves `spine/rt` and `spine/be`. Controllers: `cpuset`, `cpu`, `memory`, `pids`.
 2. Disjoint `cpuset.cpus`. No `cpu.max` on RT. `cpu.weight` is sharing, not isolation.
 3. `memory.max` and `pids.max` on BE only. `memory.max` is pressure isolation, not MMU isolation.
-4. RT is `SCHED_FIFO` at a fixed setup priority. BE is `SCHED_OTHER`. No `SCHED_DEADLINE`. Name `sched_rt_runtime_us`: leave the 95% default or set it in the open.
-5. Two processes. One shared mailbox mapping (memfd or POSIX shm, RT-owned). No second channel. `cgroup.kill` on `spine/be` leaves RT and the last complete message.
-6. Stock can show the CPU wall, BE caps, process isolation except the mailbox, and BE kill. Stock cannot show bounded IRQ/wakeup latency or a deadline. IRQ-on-RT-CPU is a known leak, not a Phase 0 fix. No boot-param product knobs. PREEMPT_RT is out this week.
+4. RT is `SCHED_FIFO` at a fixed setup priority. BE is `SCHED_OTHER`. No `SCHED_DEADLINE`. Stock `sched_rt_runtime_us` 95% cap stays. Do not set it. No `-1`.
+5. Two processes. Shared map is staging only (payload + commit). Sequence, age, valid are RT-private, not in the BE map. Not a second channel. `cgroup.kill` on `spine/be` leaves RT private mappings and the last complete committed message.
+6. Stock can show the CPU wall, BE caps, process isolation except the staging map, and BE kill. Stock cannot show bounded IRQ/wakeup latency or a deadline. IRQ-on-RT-CPU is a known leak, not a Phase 0 fix. No boot-param product knobs. PREEMPT_RT is out this week.
