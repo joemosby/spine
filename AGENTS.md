@@ -50,5 +50,8 @@ Long form: `docs/inter-domain-contract.md`.
 - Job path: clock, wait-free consume, validate, compute, select, non-blocking
   actuator, observability write. Period wait is not on the job path.
 - Silence is be-stale. be-dead only via Isolate/supervisor isolation-fault word.
+- Isolation-fault word is cleared only by Isolate/supervisor; BE restart does
+  not clear it; while set, be-dead + hold.
+- No unbounded loop on the job path.
 - Init-hold command set at init. Restart does not clear RT state.
 - Observability is a fixed RT-owned record, readable if BE is dead, not via BE.

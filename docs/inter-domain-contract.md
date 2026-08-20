@@ -118,6 +118,8 @@ Isolate, Harness/human read of the record, BE restart.
 
 ### Job-path bans
 
+- No unbounded loop on the job path. Depth-1 bounds drain; it does not bound
+  control compute.
 - No heap. No allocation. No `std::vector` / `std::string` growth. No throw.
   No formatting logs. All buffers reserved at init.
 - No lock, mutex, futex, or join shared with BE. The job path is wait-free
@@ -149,8 +151,12 @@ Isolate or supervisor sets the RT-owned isolation-fault word. RT does not infer
 death from silence (silence is stale). Mode `be-dead`, hold last RT command.
 RT does not wait, join, block, or allocate because BE died.
 
-Restart does not clear last-complete, last command, age, sequence, valid, or
-the observability record.
+Restart does not clear last-complete, last command, age, sequence, valid,
+the observability record, or the isolation-fault word.
+Isolate or supervisor is the only writer and the only clearer of the
+isolation-fault word. BE restart does not clear it. While the word is set,
+mode is `be-dead` and RT holds (init-hold or last command). RT does not
+clear it.
 
 ### RT job overruns (still running when the next period starts)
 
