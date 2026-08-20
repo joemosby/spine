@@ -2,9 +2,10 @@
 
 Phase 0 workspace for a mixed-criticality runtime.
 
-This repository is the build-system and landing area. It does not yet contain
-runtime code. The inter-domain contract is owned by Runtime and will land
-separately after Architect stamp. Do not treat this tree as that contract.
+This repository is a Bzlmod-only landing area. `@spine//runtime` is the
+mailbox + loop + observation library. It is not a scheduler. Long form
+for the contract lives in `docs/`. This README does not claim isolation
+or a measured deadline.
 
 ## What this tree is
 
@@ -15,16 +16,16 @@ A Bzlmod-only Bazel skeleton, portable as a third-party module:
   on `@spine//runtime`. No WORKSPACE consumers.
 - Dependencies from the Bazel Central Registry (`rules_cc`, `platforms`,
   and `toolchains_llvm` as a root-only `dev_dependency`)
-- A docs `//:docs` target and a public placeholder `//runtime`
+- A docs `//:docs` target and the public `//runtime` library
 
 ## What this tree is not
 
 This README does not claim isolation, spatial safety, deadlines, measured
 timing, or certification. Those are out of scope for Phase 0 docs.
 
-There is no `cc_binary`, no RT loop, and no sample app. `@spine//runtime`
-is a public placeholder `cc_library` (header only). Runtime owns the
-inter-domain contract and the first C++ that implements it.
+There is no `cc_binary` and no sample app. `@spine//runtime` is the
+mailbox + loop + observation `cc_library`. It is not a scheduler. `T`
+and `N` are caller-supplied init config, not a measured deadline.
 
 Isolation, when a package exists, is Linux-only and is not required to use
 the mailbox/loop. It is not a dep of `@spine//runtime`. Harness is not a
@@ -55,5 +56,10 @@ Requires [bazelisk](https://github.com/bazelbuild/bazelisk). Then:
 bazelisk build //...
 ```
 
-That builds the docs package graph and the public `@spine//runtime`
-placeholder. It does not compile an RT loop or product C++.
+That builds the docs package graph and `@spine//runtime`. It does not
+claim isolation or a measured deadline.
+
+```bash
+bazelisk build //runtime:runtime
+bazelisk test //runtime:runtime_test
+```

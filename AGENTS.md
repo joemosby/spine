@@ -63,6 +63,9 @@ Guard: isolation, timing, alloc. Architect looks only if a PR changes a stamp.
 
 Long form: `docs/inter-domain-contract.md`.
 
+- `@spine//runtime` is the mailbox + loop + observation library. It is not
+  a scheduler. `T` and `N` are caller-supplied init config, not a measured
+  deadline.
 - Two domains + supervisor. Separate address spaces.
 - BE writes only the staging slot (payload + commit word). RT copies+validates
   into committed RT-only storage. Torn / wrong-size / layout-fail = no new message.
@@ -87,8 +90,8 @@ not suggestions.
   depends on the public `cc_library` at `@spine//runtime`. No WORKSPACE
   consumers.
 - Public surface is small and stable: `@spine//runtime` only. That target is
-  a placeholder until Runtime owns the C++. It is not a loop and not a
-  cgroup call.
+  the mailbox + loop + observation library. It is not a scheduler, not a
+  measured deadline, and not a cgroup call.
 - Isolation, when a package exists, is Linux-only
   (`target_compatible_with`). It is not required to use the mailbox/loop
   and must not be a required dep of `@spine//runtime`. Do not claim
