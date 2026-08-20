@@ -1,6 +1,7 @@
 # Phase 0 inter-domain contract
 
-Status: draft, cut 2. Not stamped. Not measured.
+Status: cut 2. Architect stamped: separate address spaces; seq/age/valid RT-only;
+job path wait-free vs BE. Not measured.
 This document states rules, not measurements.
 No deadline value, WCET, miss rate, or isolation guarantee is claimed here.
 Those require a Harness measurement and Architect's stamp.
