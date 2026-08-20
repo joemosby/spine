@@ -1,0 +1,11 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:private"])
+
+# Public consumer surface. Placeholder only; Runtime owns product C++.
+# Isolation is not a dep. Harness is not a dep. Labels stay package-relative.
+cc_library(
+    name = "runtime",
+    hdrs = ["runtime.h"],
+    visibility = ["//visibility:public"],
+)
