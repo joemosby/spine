@@ -8,6 +8,7 @@ filegroup(
         "docs/phase0-proof-spec.md",
         "docs/phase0-proof-run.md",
         "docs/contract-failures.md",
+        "docs/isolation-timing-threats.md",
     ],
     visibility = ["//visibility:public"],
 )
