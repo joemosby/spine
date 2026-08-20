@@ -1,0 +1,10 @@
+# Package graph only. No C++ product targets in Phase 0.
+filegroup(
+    name = "docs",
+    srcs = [
+        "AGENTS.md",
+        "README.md",
+        "docs/inter-domain-contract.md",
+    ],
+    visibility = ["//visibility:public"],
+)
