@@ -137,3 +137,4 @@ The measured run, not a runtime.
 - Named injections: `inj-be-kill`, `inj-be-overrun`, `inj-stale-mailbox`.
 - Measurement uses the existing RT observability record only. No second channel.
 - Harness is not a public dep.
+- A run log lives at `docs/phase0-proof-run.md` and is a measurement, not a stamp.

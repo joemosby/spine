@@ -1,0 +1,46 @@
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+
+package(default_visibility = ["//visibility:private"])
+
+# Private Phase 0 measured-run binaries. Not a public dep.
+# Isolation is not implemented here. Not a required dep of //runtime.
+
+cc_binary(
+    name = "rt",
+    srcs = [
+        "rt_main.cc",
+        "shared.h",
+    ],
+    copts = [
+        "-fno-exceptions",
+        "-fno-rtti",
+    ],
+    deps = ["//runtime"],
+)
+
+cc_binary(
+    name = "be",
+    srcs = [
+        "be_main.cc",
+        "shared.h",
+    ],
+    copts = [
+        "-fno-exceptions",
+        "-fno-rtti",
+    ],
+    linkopts = ["-pthread"],
+    deps = ["//runtime"],
+)
+
+cc_binary(
+    name = "phase0_run",
+    srcs = [
+        "phase0_run.cc",
+        "shared.h",
+    ],
+    copts = [
+        "-fno-exceptions",
+        "-fno-rtti",
+    ],
+    deps = ["//runtime"],
+)
