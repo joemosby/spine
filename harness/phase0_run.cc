@@ -1,5 +1,3 @@
-#define _GNU_SOURCE
-
 #include "harness/shared.h"
 
 #include <errno.h>
@@ -669,11 +667,6 @@ int main(int argc, char** argv) {
   }
 
   knobs.fifo_set = try_sched_fifo(rt_pid, spine::harness::kFifoPriority, &knobs.fifo_errno);
-  if (knobs.fifo_set) {
-    knobs_note("RT SCHED_FIFO set at setup.");
-  } else {
-    knobs_note("SCHED_FIFO was not set.");
-  }
 
   const std::uint64_t phase_timeout =
       static_cast<std::uint64_t>(spine::harness::kPeriodsPerLoad) * spine::harness::kPeriodNs * 4ull + 2000000000ull;

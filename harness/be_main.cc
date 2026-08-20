@@ -1,5 +1,3 @@
-#define _GNU_SOURCE
-
 #include "harness/shared.h"
 
 #include <fcntl.h>
