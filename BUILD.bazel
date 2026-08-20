@@ -1,4 +1,4 @@
-# Package graph only. No C++ product targets in Phase 0.
+# Docs package graph. Product C++ is not here; public placeholder is //runtime.
 filegroup(
     name = "docs",
     srcs = [

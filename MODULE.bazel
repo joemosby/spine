@@ -3,20 +3,31 @@ module(
     version = "0.0.0",
 )
 
-# C++ rules live in rules_cc (Bazel 9 no longer ships them). No product
-# cc_* targets in Phase 0; this dep is the BCR hook for later Runtime code.
+# Consumers: bazel_dep(name = "spine") and depend on @spine//runtime.
+# Bzlmod only. No WORKSPACE consumers.
+# This module does not register a C++ toolchain for dependents.
+
+# C++ rules live in rules_cc (Bazel 9 no longer ships them).
 bazel_dep(name = "rules_cc", version = "0.2.22")
 bazel_dep(name = "platforms", version = "1.1.0")
 
-# Fetched LLVM compiler (not host gcc/clang). Native links still use the
-# host sysroot unless a sysroot is added later. See README.
-bazel_dep(name = "toolchains_llvm", version = "1.8.0")
+# Fetched LLVM for *this* repo's own builds only (root module).
+# Native links still use the host sysroot. See README and AGENTS.md.
+# Consumers bring their own toolchain; do not inherit these.
+bazel_dep(name = "toolchains_llvm", version = "1.8.0", dev_dependency = True)
 
-llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
+llvm = use_extension(
+    "@toolchains_llvm//toolchain/extensions:llvm.bzl",
+    "llvm",
+    dev_dependency = True,
+)
 llvm.toolchain(
     name = "llvm_toolchain",
     llvm_version = "19.1.7",
 )
 use_repo(llvm, "llvm_toolchain")
 
-register_toolchains("@llvm_toolchain//:all")
+register_toolchains(
+    "@llvm_toolchain//:all",
+    dev_dependency = True,
+)
