@@ -1,0 +1,4 @@
+# Reviewed Phase 0 flags only. No remote cache, RBE, gazelle, or docker.
+
+# Do not autoconfigure host gcc/clang. Use the LLVM toolchain in MODULE.bazel.
+common --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1

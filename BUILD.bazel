@@ -1,0 +1,6 @@
+# Package graph only. No C++ product targets in Phase 0.
+filegroup(
+    name = "docs",
+    srcs = ["README.md"],
+    visibility = ["//visibility:public"],
+)
