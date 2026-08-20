@@ -122,15 +122,16 @@ Architect stamped. Requirements, not suggestions.
 - Isolation stays stock cgroup v2 + disjoint cpuset. Long form:
   `docs/linux-isolation-knobs.md`. Not a hypervisor. Do not claim
   isolation.
-- Harness is the measured run, not a runtime. Long form:
-  `docs/phase0-proof-spec.md`. Spec only. Not measured.
+- Harness is the measured run, not a runtime. Spec:
+  `docs/phase0-proof-spec.md`. Run log: `docs/phase0-proof-run.md` is a
+  measurement, not a stamp.
 - Public surface stays `@spine//runtime` only. This workspace is still
   not fully hermetic. Do not write "hermetic" as a claim. Do not claim
   isolation, deadlines, or certification.
 
 ## Harness
 
-Long form: `docs/phase0-proof-spec.md`. Spec only. Not measured.
+Long form: `docs/phase0-proof-spec.md`.
 The measured run, not a runtime.
 
 - Clock: `CLOCK_MONOTONIC_RAW`. Named load: `be-saturate`. Control: `be-idle`.
